@@ -1,5 +1,6 @@
 import random as rd
-
+dx = [-1, 0, 1, 0,-1, 1,-1, 1]
+dy = [ 1,-1,-1, 1, 1, 1, 0, 0]
 
 def emptyBoxes(world):
     emptyPos = []
@@ -23,8 +24,6 @@ def is_connected(world):
     visted.append(init_Pos)
     queue = []
     queue.append(init_Pos)
-    dx = [-1, 0, 1, 0,-1, 1,-1, 1]
-    dy = [ 1,-1,-1, 1, 1, 1, 0, 0]
     while len(queue)>0:
         pos = queue.pop()
         index = 0
@@ -39,7 +38,7 @@ def is_connected(world):
     else:
         return False
 
-def genBabyCradle_Rec(ipos,pos,dx,dy,world,kids):
+def genBabyCradle_Rec(ipos,pos,world,kids):
     if kids == 0: 
         return world 
     else:
@@ -52,11 +51,9 @@ def genBabyCradle_Rec(ipos,pos,dx,dy,world,kids):
                 return genBabyCradle_Rec(ipos,new_pos,dx,dy,world,pkids)
             else:
                 index+=1
-        return genBabyCradle_Rec(ipos,ipos,dx,dy,world,kids)
+        return genBabyCradle_Rec(ipos,ipos,world,kids)
 
 def closest(ipos,world,char):
-    dx = [-1, 0, 1, 0,-1, 1,-1, 1]
-    dy = [ 1,-1,-1, 1, 1, 1, 0, 0]
     visited = []
     visited.append(ipos)
     queue = []
@@ -87,8 +84,6 @@ def print_world(world):
         print("\n")   
 
 def is_near(pos,char,world):
-    dx = [ 0,-1, 1, 0,-1, 1,-1, 1]
-    dy = [-1, 1,-1, 1, 1, 1, 0, 0]
     for index in range(8):
         ady = (pos[0]+dx[index],pos[1]+dy[index])
         if in_range(world,ady) and char in world[ady[0]][ady[1]]:
