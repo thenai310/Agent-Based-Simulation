@@ -103,13 +103,13 @@ def print_world(world):
 def near(pos,char,world):
     adyacents = []
     ndx = [-1, 0, 1, 0,-1, 1,-1, 1]
-    ndy = [ 1,-1,-1, 1, 1, 1, 0, 0]  
+    ndy = [ 1,-1,-1, 1,-1, 1, 0, 0]  
     for index in range(8):
         ady = (pos[0]+ndx[index],pos[1]+ndy[index])
         if char == ' ':
             if in_range(world,ady) and len(world[ady[0]][ady[1]]) == 0:
                 adyacents.append(ady)
-        else:
-            if in_range(world,ady) and char in world[ady[0]][ady[1]]:
+        elif char == 'K':
+            if in_range(world,ady) and char in world[ady[0]][ady[1]] and 'R' not in world[ady[0]][ady[1]]:
                 adyacents.append(ady)
     return adyacents

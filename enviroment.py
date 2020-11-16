@@ -144,14 +144,13 @@ class Robot:
         if 'K' in self.world[self.pos[0]][self.pos[1]]:
             self.world[self.pos[0]][self.pos[1]].remove('K')
             self.carrying_kid = True
-            self.env.amount_kids -= 1
             for kid in self.env.kids:
                 if kid.pos == self.pos:
                     kid.in_robot = True
                     kid.pos = (-1,-1)
                     break
 
-    def put_kid_to_bed(self):
+    def clean_room(self):
         path = walkable_path('*',self.pos,self.world)
         self.world[self.pos[0]][self.pos[1]].remove('R')
         self.pos = path.pop(0)
@@ -162,59 +161,55 @@ class Robot:
         if 'C' in self.world[self.pos[0]][self.pos[1]]:
             self.world[self.pos[0]][self.pos[1]].append('K')
             self.carrying_kid = False
+            self.env.amount_kids -= 1
             for kid in self.env.kids:
                 if kid.pos == (-1,-1):
                     kid.in_cradle = True
                     kid.in_robot = False
                     kid.pos = self.pos
                     break
-        
+    
+    def put_kid_to_bed(self):
+        path = walkable_path('C',self.pos,self.world)
+        self.world[self.pos[0]][self.pos[1]].remove('R')
+        self.pos = path.pop(0)
+        self.world[self.pos[0]][self.pos[1]].append('R')
+        if 'C' in self.world[self.pos[0]][self.pos[1]]:
+            self.world[self.pos[0]][self.pos[1]].append('K')
+            self.carrying_kid = False
+            self.env.amount_kids -= 1
+            for kid in self.env.kids:
+                if kid.pos == (-1,-1):
+                    kid.in_cradle = True
+                    kid.in_robot = False
+                    kid.pos = self.pos
+                    break
 
-        # print(path)
-
-
+    
 
 if __name__ == "__main__":
     
-    env = Enviroment(6,9,20,15,4)
+    env = Enviroment(6,9,0,5,5)
     env.initialize()
-    # robot_pos = choice(emptyBoxes(env.world))
-    # env.world[robot_pos[0]][robot_pos[1]].append('R')
-    # robot = Robot(robot_pos)
     print_world(env.world)
-    while env.amount_kids > 0:
+    rep = 0
+    while env.amount_kids > 0 and rep < 1000:
         input()
-        # for kid in env.kids:
-        #     if not kid.in_cradle:
-        #         k_amount,e_boxes = kid.kids_around()
-        #         kid.move()
-        #         kid.add_dirt(k_amount,e_boxes)
-        #         print_world(env.world)            
-        #         input()
         if env.robot.carrying_kid and env.dirt > 0:
-            print_world(env.world)
+            env.robot.clean_room()
+        elif env.robot.carrying_kid and env.dirt == 0:
             env.robot.put_kid_to_bed()
-            input()
         else:
             env.robot.pick_kids()
         print_world(env.world)
-    # mundillo =  [[['K'],[],['|'],[],[]],[['*'],[],[],[],[]],[[],[],['R'],[],[]]]
-    # print_world(mundillo)
-    # kid = Kid((0,0),mundillo)
-    # kid2 = Kid((0,1),mundillo)
-    # for _ in range(7):
-    #     for kid in env.kidList:
-            # k_amount,e_boxes = kid.kids_around()
-            # kid.move()
-            # kid.add_dirt(k_amount,e_boxes)
-    #     # k_amount2,e_boxes2 = kid2.kids_around()
-    #     # kid2.move()
-    #     # kid2.add_dirt(k_amount2,e_boxes2)
-    #         input()
-            # print_world(env.world)
-        # print_world(mundillo)
-    # robot = Robot((2,2)) 
-    # print(robot.pick_kids(mundillo))
+        for kid in env.kids:
+            if not (kid.in_cradle or kid.in_robot):
+                k_amount,e_boxes = kid.kids_around()
+                kid.move()
+                kid.add_dirt(k_amount,e_boxes)
+                input()
+                print_world(env.world)            
+        rep+=1
 
 
 
