@@ -7,13 +7,15 @@ dy = [-1, 1, 0, 0]
 
 class Enviroment:
 
-    def __init__(self, n,m,dirt_percent,obst_percent,kids):
+    def __init__(self, n,m,dirt_percent,obst_percent,kids, times):
         self.world = []
         self.amount_kids = kids
         self.kids = []
         self.obs = round(((n*m)*obst_percent)/100)
         self.dirt = round(((n*m)*dirt_percent)/100)
-        self.create_world(n,m)
+        self.times = times
+        self.dimensions = (n,m)
+        self.create_world()
 
     def initialize(self):
         self.genBabyCradle()
@@ -22,10 +24,10 @@ class Enviroment:
         self.genDirt()
         self.genRobot()
         
-    def create_world(self,n,m):
-        for i in range(n):
+    def create_world(self):
+        for i in range(self.dimensions[0]):
             self.world.append([])
-            for _ in range(m):
+            for _ in range(self.dimensions[1]):
                 self.world[i].append([])
         return self.world
 
@@ -47,9 +49,10 @@ class Enviroment:
             self.world[kid[0]][kid[1]].append('K')
        
     def genBabyCradle(self):
+        self.pos_cradles = []
         index = 0
         init_Pos = choice(emptyBoxes(self.world))
-        return genBabyCradle_Rec(init_Pos,init_Pos,self.world,self.amount_kids)
+        return genBabyCradle_Rec(init_Pos,init_Pos,self.world,self.amount_kids,self.pos_cradles)
 
     def genObstacles(self):
         obs = self.obs
@@ -61,6 +64,36 @@ class Enviroment:
             else:
                 self.world[pos[0]][pos[1]].pop()
 
+    def variate(self):
+        self.world = []
+        self.create_world()
+        kids_in_cradle, kid_in_robot = 0,0
+        for kid in self.kids:
+            if kid.in_cradle:
+                kids_in_cradle += 1
+            if kid.in_robot:
+                kid_in_robot += 1
+        self.amount_kids = len(self.kids)
+        self.kids = []
+        self.genBabyCradle()
+        for _ in range(kids_in_cradle):
+            cradle = self.pos_cradles.pop()
+            self.world[cradle[0]][cradle[1]].append('K')
+            kid = Kid(cradle,self)
+            kid.in_cradle = True
+            self.kids.append(kid)
+            self.amount_kids-=1
+        self.amount_kids -= kid_in_robot
+        self.genObstacles()
+        self.genKids()
+        self.genDirt()
+        self.genRobot()
+        if kid_in_robot == 1:
+            kid = Kid((-1,-1),self)
+            kid.in_robot = True
+            self.kids.append(kid)
+            self.robot.carrying_kid = True
+        
 class Kid:
 
     def __init__(self,pos,env):
@@ -155,61 +188,100 @@ class Robot:
         self.world[self.pos[0]][self.pos[1]].remove('R')
         self.pos = path.pop(0)
         self.world[self.pos[0]][self.pos[1]].append('R')
-        if '*' in self.world[self.pos[0]][self.pos[1]]:
-            self.world[self.pos[0]][self.pos[1]].remove('*')
-            self.env.dirt -= 1
-        if 'C' in self.world[self.pos[0]][self.pos[1]]:
-            self.world[self.pos[0]][self.pos[1]].append('K')
-            self.carrying_kid = False
-            self.env.amount_kids -= 1
-            for kid in self.env.kids:
-                if kid.pos == (-1,-1):
-                    kid.in_cradle = True
-                    kid.in_robot = False
-                    kid.pos = self.pos
-                    break
     
     def put_kid_to_bed(self):
         path = walkable_path('C',self.pos,self.world)
         self.world[self.pos[0]][self.pos[1]].remove('R')
-        self.pos = path.pop(0)
+        if randint(0,1) and len(path)>1:
+            self.pos = path.pop(1)
+        else:
+            self.pos = path.pop(0)
         self.world[self.pos[0]][self.pos[1]].append('R')
-        if 'C' in self.world[self.pos[0]][self.pos[1]]:
-            self.world[self.pos[0]][self.pos[1]].append('K')
-            self.carrying_kid = False
-            self.env.amount_kids -= 1
-            for kid in self.env.kids:
-                if kid.pos == (-1,-1):
-                    kid.in_cradle = True
-                    kid.in_robot = False
-                    kid.pos = self.pos
-                    break
 
-    
+    def reactive_behavior(self):
+        
+        if '*' in self.world[self.pos[0]][self.pos[1]]:
+            self.world[self.pos[0]][self.pos[1]].remove('*')
+            self.env.dirt -= 1
+        elif self.carrying_kid:
+
+            if 'C' in self.world[self.pos[0]][self.pos[1]]:
+                self.world[self.pos[0]][self.pos[1]].append('K')
+                self.carrying_kid = False
+                for kid in self.env.kids:
+                    if kid.pos == (-1,-1):
+                        kid.in_cradle = True
+                        kid.in_robot = False
+                        kid.pos = self.pos
+                        break
+            else:
+                self.put_kid_to_bed()
+        else:
+            if False in [kid.in_cradle for kid in self.env.kids]: 
+                self.pick_kids()
+            else:
+                self.clean_room()    
+
+    def dirt_sensitive_behavior(self,dirt_percent):
+
+        if dirt_percent >= 20:
+            if '*' in self.world[self.pos[0]][self.pos[1]]:
+                self.world[self.pos[0]][self.pos[1]].remove('*')
+                self.env.dirt -= 1
+            else:
+                self.clean_room()
+        elif self.carrying_kid:
+            if 'C' in self.world[self.pos[0]][self.pos[1]]:
+                self.world[self.pos[0]][self.pos[1]].append('K')
+                self.carrying_kid = False
+                for kid in self.env.kids:
+                    if kid.pos == (-1,-1):
+                        kid.in_cradle = True
+                        kid.in_robot = False
+                        kid.pos = self.pos
+                        break
+            else:
+                self.put_kid_to_bed()
+        else:
+            if False in [kid.in_cradle for kid in self.env.kids]: 
+                self.pick_kids()
+            else:
+                if '*' in self.world[self.pos[0]][self.pos[1]]:
+                    self.world[self.pos[0]][self.pos[1]].remove('*')
+                    self.env.dirt -= 1
+                else:
+                    self.clean_room()
+
 
 if __name__ == "__main__":
     
-    env = Enviroment(6,9,0,5,5)
+    env = Enviroment(8,10,10,15,5,20)
     env.initialize()
-    print_world(env.world)
-    rep = 0
-    while env.amount_kids > 0 and rep < 1000:
-        input()
-        if env.robot.carrying_kid and env.dirt > 0:
-            env.robot.clean_room()
-        elif env.robot.carrying_kid and env.dirt == 0:
-            env.robot.put_kid_to_bed()
-        else:
-            env.robot.pick_kids()
-        print_world(env.world)
-        for kid in env.kids:
-            if not (kid.in_cradle or kid.in_robot):
-                k_amount,e_boxes = kid.kids_around()
-                kid.move()
-                kid.add_dirt(k_amount,e_boxes)
-                input()
-                print_world(env.world)            
+    dirt_percent , rep = 0, 0
+
+    while dirt_percent <= 60 and rep < 100:    
+
+        for _ in range(env.times):
+
+            env.robot.reactive_behavior()
+            # env.robot.dirt_sensitive_behavior(dirt_percent)
+            
+            for kid in env.kids:
+                if not (kid.in_cradle or kid.in_robot):
+                    k_amount,e_boxes = kid.kids_around()
+                    kid.move()
+                    kid.add_dirt(k_amount,e_boxes)
+        
+        dirt_percent = round(env.dirt * 100/((len(emptyBoxes(env.world)) + env.dirt)))
+        if dirt_percent == 0 and False not in [kid.in_cradle for kid in env.kids]:
+            break
+        print('##################  VARIATION  ##################')
+        env.variate()
         rep+=1
-
-
+    if rep >= 100 :
+        print('Simulation stopped')
+    elif dirt_percent > 60:
+        print('Robot fired')
+    else:
+        print('Simulation succeded')
 

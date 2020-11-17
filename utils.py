@@ -20,9 +20,10 @@ def in_range(world,pos):
         return True
 
 def is_connected(world):
+    # (new_pos in emptyBoxes(world) or ('C' in world[new_pos[0]][new_pos[1]] and 'K' not in world[new_pos[0]][new_pos[1]])) and
     init_Pos = rd.choice(emptyBoxes(world))
-    visted = []
-    visted.append(init_Pos)
+    visited = []
+    visited.append(init_Pos)
     queue = []
     queue.append(init_Pos)
     while len(queue)>0:
@@ -30,29 +31,30 @@ def is_connected(world):
         index = 0
         while index<4:
             new_pos = (pos[0]+dx[index],pos[1]+dy[index])
-            if in_range(world,new_pos) and new_pos in emptyBoxes(world) and new_pos not in visted:
-                visted.append(new_pos)
+            if in_range(world,new_pos) and new_pos in emptyBoxes(world) and new_pos not in visited:
+                visited.append(new_pos)
                 queue.append(new_pos)
             index+=1
-    if len(visted) == len(emptyBoxes(world)):
+    if len(visited) == len(emptyBoxes(world)):
         return True
     else:
         return False
 
-def genBabyCradle_Rec(ipos,pos,world,kids):
+def genBabyCradle_Rec(ipos,pos,world,kids,listpos):
     if kids == 0: 
         return world 
     else:
         world[pos[0]][pos[1]].append('C')
+        listpos.append(pos)
         pkids = kids - 1
         index = 0
         while index<4:
             new_pos = (pos[0]+dx[index],pos[1]+dy[index])
             if in_range(world,new_pos) and new_pos in emptyBoxes(world):
-                return genBabyCradle_Rec(ipos,new_pos,world,pkids)
+                return genBabyCradle_Rec(ipos,new_pos,world,pkids,listpos)
             else:
                 index+=1
-        return genBabyCradle_Rec(ipos,ipos,world,kids)
+        return genBabyCradle_Rec(ipos,ipos,world,kids,listpos)
 
 def walkable_path(char,ipos,world):
 
@@ -89,7 +91,6 @@ def walkable_path(char,ipos,world):
             break
         path.insert(0,pos)        
     return path
-
 
 def print_world(world):
     for row in world:
