@@ -184,36 +184,40 @@ class Robot:
                     break
 
     def clean_room(self):
-        path = walkable_path('*',self.pos,self.world)
-        self.world[self.pos[0]][self.pos[1]].remove('R')
-        self.pos = path.pop(0)
-        self.world[self.pos[0]][self.pos[1]].append('R')
-    
-    def put_kid_to_bed(self):
-        path = walkable_path('C',self.pos,self.world)
-        self.world[self.pos[0]][self.pos[1]].remove('R')
-        if randint(0,1) and len(path)>1:
-            self.pos = path.pop(1)
-        else:
-            self.pos = path.pop(0)
-        self.world[self.pos[0]][self.pos[1]].append('R')
-
-    def reactive_behavior(self):
-        
         if '*' in self.world[self.pos[0]][self.pos[1]]:
             self.world[self.pos[0]][self.pos[1]].remove('*')
             self.env.dirt -= 1
-        elif self.carrying_kid:
+        else:
+            path = walkable_path('*',self.pos,self.world)
+            self.world[self.pos[0]][self.pos[1]].remove('R')
+            self.pos = path.pop(0)
+            self.world[self.pos[0]][self.pos[1]].append('R')
+    
+    def put_kid_to_bed(self):
+        if 'C' in self.world[self.pos[0]][self.pos[1]]:
+            self.world[self.pos[0]][self.pos[1]].append('K')
+            self.carrying_kid = False
+            for kid in env.kids:
+                if kid.pos == (-1,-1):
+                    kid.in_cradle = True
+                    kid.in_robot = False
+                    kid.pos = self.pos
+                    break
+        else:
+            path = walkable_path('C',self.pos,self.world)
+            self.world[self.pos[0]][self.pos[1]].remove('R')
+            if randint(0,1) and len(path)>1:
+                self.pos = path.pop(1)
+            else:
+                self.pos = path.pop(0)
+            self.world[self.pos[0]][self.pos[1]].append('R')
 
-            if 'C' in self.world[self.pos[0]][self.pos[1]]:
-                self.world[self.pos[0]][self.pos[1]].append('K')
-                self.carrying_kid = False
-                for kid in self.env.kids:
-                    if kid.pos == (-1,-1):
-                        kid.in_cradle = True
-                        kid.in_robot = False
-                        kid.pos = self.pos
-                        break
+    def pure_reactive_behavior(self):
+        
+        if self.carrying_kid:
+            if '*' in self.world[self.pos[0]][self.pos[1]]:
+                self.world[self.pos[0]][self.pos[1]].remove('*')
+                self.env.dirt -= 1
             else:
                 self.put_kid_to_bed()
         else:
@@ -224,34 +228,19 @@ class Robot:
 
     def dirt_sensitive_behavior(self,dirt_percent):
 
-        if dirt_percent >= 20:
-            if '*' in self.world[self.pos[0]][self.pos[1]]:
-                self.world[self.pos[0]][self.pos[1]].remove('*')
-                self.env.dirt -= 1
-            else:
-                self.clean_room()
-        elif self.carrying_kid:
-            if 'C' in self.world[self.pos[0]][self.pos[1]]:
-                self.world[self.pos[0]][self.pos[1]].append('K')
-                self.carrying_kid = False
-                for kid in self.env.kids:
-                    if kid.pos == (-1,-1):
-                        kid.in_cradle = True
-                        kid.in_robot = False
-                        kid.pos = self.pos
-                        break
-            else:
-                self.put_kid_to_bed()
+        if dirt_percent >= 40:
+            self.clean_room()
+        else:
+            self.reactive_behavior()
+
+    def reactive_behavior(self):
+        if self.carrying_kid:
+            self.put_kid_to_bed()
         else:
             if False in [kid.in_cradle for kid in self.env.kids]: 
                 self.pick_kids()
             else:
-                if '*' in self.world[self.pos[0]][self.pos[1]]:
-                    self.world[self.pos[0]][self.pos[1]].remove('*')
-                    self.env.dirt -= 1
-                else:
-                    self.clean_room()
-
+                self.clean_room() 
 
 if __name__ == "__main__":
     
@@ -263,8 +252,9 @@ if __name__ == "__main__":
 
         for _ in range(env.times):
 
-            env.robot.reactive_behavior()
-            # env.robot.dirt_sensitive_behavior(dirt_percent)
+            # env.robot.reactive_behavior()
+            # env.robot.pure_reactive_behavior()
+            env.robot.dirt_sensitive_behavior(dirt_percent)
             
             for kid in env.kids:
                 if not (kid.in_cradle or kid.in_robot):
@@ -275,9 +265,11 @@ if __name__ == "__main__":
         dirt_percent = round(env.dirt * 100/((len(emptyBoxes(env.world)) + env.dirt)))
         if dirt_percent == 0 and False not in [kid.in_cradle for kid in env.kids]:
             break
-        print('##################  VARIATION  ##################')
+
+        print('##################  VARIATION ',rep,' ##################')
         env.variate()
         rep+=1
+
     if rep >= 100 :
         print('Simulation stopped')
     elif dirt_percent > 60:
