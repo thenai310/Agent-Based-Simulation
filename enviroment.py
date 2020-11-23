@@ -15,9 +15,12 @@ class Enviroment:
         self.dirt = round(((n*m)*dirt_percent)/100)
         self.times = times
         self.dimensions = (n,m)
-        self.create_world()
+
+    def __str__(self):
+        return (f'{self.amount_kids} kid(s), {self.dirt} dirty box(es)')
 
     def initialize(self):
+        self.create_world()
         self.genBabyCradle()
         self.genObstacles()
         self.genKids()
@@ -63,6 +66,14 @@ class Enviroment:
                 obs -= 1
             else:
                 self.world[pos[0]][pos[1]].pop()
+
+    def recreate(self):
+        for kid in self.kids:
+            if kid.in_cradle:
+                kid.in_cradle = False
+            if kid.in_robot:
+                kid.in_robot = False
+        self.variate()
 
     def variate(self):
         self.world = []
@@ -231,9 +242,9 @@ class Robot:
         if dirt_percent >= 40:
             self.clean_room()
         else:
-            self.reactive_behavior()
+            self.internal_state_behavior()
 
-    def reactive_behavior(self):
+    def internal_state_behavior(self):
         if self.carrying_kid:
             self.put_kid_to_bed()
         else:
@@ -243,37 +254,67 @@ class Robot:
                 self.clean_room() 
 
 if __name__ == "__main__":
-    
-    env = Enviroment(8,10,10,15,5,20)
-    env.initialize()
-    dirt_percent , rep = 0, 0
 
-    while dirt_percent <= 60 and rep < 100:    
+    env1 = Enviroment(8,10, 15, 10, 5, 10)
+    env2 = Enviroment(8,10, 15, 10, 7, 20)
+    env3 = Enviroment(8,10, 40,  0, 7, 20)
+    env4 = Enviroment(8,10,  0, 40, 7, 15)
+    env5 = Enviroment(8,10, 10, 40, 3, 20)
+    env6 = Enviroment(6, 6, 15, 10, 4, 10)
+    env7 = Enviroment(6, 6, 15, 10, 5, 15)
+    env8 = Enviroment(6, 6, 35, 0,  5, 20)
+    env9 = Enviroment(6, 6,  0, 35, 5, 15)
+    env10 = Enviroment(6, 6, 25, 25, 2, 20) 
 
-        for _ in range(env.times):
+    enviroments = [env1,env2,env3,env4,env5,env6,env7,env8,env9,env10]
+    s,f,w = 0,0,0
+    for idx , env in enumerate(enviroments):
+        print(f'############### Enviroment {idx+1} ################')
+        env.initialize()
+        stopped, win, fired = 0,0,0
+        for _ in range(30):
+            e_d = env.dirt
+            dirt_percent , rep = 0, 0
+            while dirt_percent <= 60 and rep < 100:    
 
-            # env.robot.reactive_behavior()
-            # env.robot.pure_reactive_behavior()
-            env.robot.dirt_sensitive_behavior(dirt_percent)
-            
-            for kid in env.kids:
-                if not (kid.in_cradle or kid.in_robot):
-                    k_amount,e_boxes = kid.kids_around()
-                    kid.move()
-                    kid.add_dirt(k_amount,e_boxes)
-        
-        dirt_percent = round(env.dirt * 100/((len(emptyBoxes(env.world)) + env.dirt)))
-        if dirt_percent == 0 and False not in [kid.in_cradle for kid in env.kids]:
-            break
+                for _ in range(env.times):
 
-        print('##################  VARIATION ',rep,' ##################')
-        env.variate()
-        rep+=1
+                    # env.robot.internal_state_behavior()
+                    env.robot.pure_reactive_behavior()
+                    # env.robot.dirt_sensitive_behavior(dirt_percent)
+                    
+                    for kid in env.kids:
+                        if not (kid.in_cradle or kid.in_robot):
+                            k_amount,e_boxes = kid.kids_around()
+                            kid.move()
+                            kid.add_dirt(k_amount,e_boxes)
+                
+                dirt_percent = round(env.dirt * 100/((len(emptyBoxes(env.world)) + env.dirt)))
+                if dirt_percent == 0 and False not in [kid.in_cradle for kid in env.kids]:
+                    break
 
-    if rep >= 100 :
-        print('Simulation stopped')
-    elif dirt_percent > 60:
-        print('Robot fired')
-    else:
-        print('Simulation succeded')
+                # print('##################  VARIATION ',rep,' ##################')
+                env.variate()
+                rep+=1
 
+            if rep >= 100 :
+                # print('Simulation stopped')
+                stopped +=1
+            elif dirt_percent > 60:
+                # print('Robot fired')
+                fired +=1
+            else:
+                # print('Simulation succeded')
+                win += 1
+            env.dirt = e_d
+            env.recreate()
+
+        print(f'Forced {stopped} time(s), succeded {win} and got fired {fired} time(s)')
+        s += stopped
+        w += win
+        f += fired
+    print('---------------------------------------------------------------')
+    print(f'Simulation stopped. Forced stop {s} times, succeded {w} and got fired {f} times in Total')
+
+        # env.world = []
+        # env.amount_kids = len(env.kids)

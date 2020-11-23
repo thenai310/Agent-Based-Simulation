@@ -57,42 +57,45 @@ def genBabyCradle_Rec(ipos,pos,world,kids,listpos):
         return genBabyCradle_Rec(ipos,ipos,world,kids,listpos)
 
 def walkable_path(char,ipos,world):
-
-    path = []
-    visited = []
-    prev = {}
-    prev[ipos] = (-1,-1)
-    queue = [ipos]
-    while len(queue) > 0:
-        index = 0 
-        pos = queue.pop(0)
-        if char == 'K':
-            if char in world[pos[0]][pos[1]] and 'C' not in world[pos[0]][pos[1]]:
+    try:
+        path = []
+        visited = []
+        prev = {}
+        prev[ipos] = (-1,-1)
+        queue = [ipos]
+        while len(queue) > 0:
+            index = 0 
+            pos = queue.pop(0)
+            if char == 'K':
+                if char in world[pos[0]][pos[1]] and 'C' not in world[pos[0]][pos[1]]:
+                    break
+            elif char == 'C':
+                if char in world[pos[0]][pos[1]] and 'K' not in world[pos[0]][pos[1]]:
+                    break
+            else:
+                if char in world[pos[0]][pos[1]]:
+                    break
+            visited.append(pos)
+            for index in range(len(dx)):
+                new_pos = (pos[0]+dx[index],pos[1]+dy[index])
+                if in_range(world,new_pos) and new_pos not in visited \
+                    and '|' not in world[new_pos[0]][new_pos[1]] and \
+                    not('K' in world[new_pos[0]][new_pos[1]] and \
+                    'C' in world[new_pos[0]][new_pos[1]]):
+                    queue.append(new_pos)
+                    prev[new_pos] = pos
+        path.append(pos)
+        while True:
+            pos = prev[pos]
+            if pos == ipos:
                 break
-        elif char == 'C':
-            if char in world[pos[0]][pos[1]] and 'K' not in world[pos[0]][pos[1]]:
-                break
-        else:
-            if char in world[pos[0]][pos[1]]:
-                break
-        visited.append(pos)
-        for index in range(len(dx)):
-            new_pos = (pos[0]+dx[index],pos[1]+dy[index])
-            if in_range(world,new_pos) and new_pos not in visited \
-                and '|' not in world[new_pos[0]][new_pos[1]] and \
-                not('K' in world[new_pos[0]][new_pos[1]] and \
-                'C' in world[new_pos[0]][new_pos[1]]):
-                queue.append(new_pos)
-                prev[new_pos] = pos
-    path.append(pos)
-    while True:
-        pos = prev[pos]
-        if pos == ipos:
-            break
-        path.insert(0,pos)        
-    return path
+            path.insert(0,pos)        
+        return path
+    except KeyError:
+        return [ipos]
 
 def print_world(world):
+    # print(env)
     for row in world:
         for box in row:
             if len(box) == 0:
