@@ -262,8 +262,8 @@ if __name__ == "__main__":
     env5 = Enviroment(8,10, 10, 30, 3, 20)
     env6 = Enviroment(6, 6, 15, 10, 4, 10)
     env7 = Enviroment(6, 6, 15, 10, 5, 15)
-    env8 = Enviroment(6, 6, 35, 0,  5, 20)
-    env9 = Enviroment(6, 6,  0, 35, 5, 15)
+    env8 = Enviroment(6, 6, 35, 0,  4, 20)
+    env9 = Enviroment(6, 6,  0, 35, 4, 15)
     env10 = Enviroment(6, 6, 25, 25, 2, 20) 
 
     enviroments = [env1,env2,env3,env4,env5,env6,env7,env8,env9,env10]
@@ -279,9 +279,9 @@ if __name__ == "__main__":
 
                 for _ in range(env.times):
 
-                    env.robot.pure_reactive_behavior()
+                    # env.robot.pure_reactive_behavior()
                     # env.robot.internal_state_behavior()
-                    # env.robot.dirt_sensitive_behavior(dirt_percent)
+                    env.robot.dirt_sensitive_behavior(dirt_percent)
                     
                     for kid in env.kids:
                         if not (kid.in_cradle or kid.in_robot):
