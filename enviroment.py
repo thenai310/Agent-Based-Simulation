@@ -268,6 +268,14 @@ if __name__ == "__main__":
 
     enviroments = [env1,env2,env3,env4,env5,env6,env7,env8,env9,env10]
     s,f,w = 0,0,0
+    strategy = int(input('Type 1, 2 or 3 for the desired strategy: '))
+    if strategy == 1:
+        print('Runing pure reactive behavior')
+    elif strategy == 2:
+        print('Runing internal state behavior')
+    else:
+        print('Runing dirt sensitive behavior')
+        
     for idx , env in enumerate(enviroments):
         print(f'############### Enviroment {idx+1} ################')
         env.initialize()
@@ -279,9 +287,12 @@ if __name__ == "__main__":
 
                 for _ in range(env.times):
 
-                    # env.robot.pure_reactive_behavior()
-                    # env.robot.internal_state_behavior()
-                    env.robot.dirt_sensitive_behavior(dirt_percent)
+                    if strategy == 1:
+                        env.robot.pure_reactive_behavior()
+                    elif strategy == 2:
+                        env.robot.internal_state_behavior()
+                    else:
+                        env.robot.dirt_sensitive_behavior(dirt_percent)
                     
                     for kid in env.kids:
                         if not (kid.in_cradle or kid.in_robot):
