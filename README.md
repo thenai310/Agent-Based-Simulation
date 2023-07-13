@@ -1,5 +1,4 @@
 # Agent-Based-Simulation
-Proyecto de simulacion basada en agentes
 
 Run enviroment.py to run the entire simulation with 10 boards:
 
